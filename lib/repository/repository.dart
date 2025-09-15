@@ -20,4 +20,12 @@ class Repository {
     return dio.get(url);
   }
 
+  static Future<Response> gas_level() {
+    var url =
+        '${baseURL}fields/3.json?results=10';
+    Dio dio = Dio();
+    dio.options.headers['content-Type'] = 'application/json';
+    return dio.get(url);
+  }
+
 }

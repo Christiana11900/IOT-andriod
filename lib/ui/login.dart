@@ -103,22 +103,6 @@ class _Loginscreen extends State<Loginscreen> {
                                 letterSpacing: 0.14,
                               ),
                             ),
-                            // InkWell(
-                            //   onTap: () {
-                            //    // Get.to(() => const ForgotPasswordscreen());
-                            //   },
-                            //   child: Text(
-                            //     "Forget your password? ".tr,
-                            //     style: const TextStyle(
-                            //       color: Color(0xff2FB01A),
-                            //       decoration: TextDecoration.underline,
-                            //       fontSize: 15,
-                            //       fontFamily: 'Inter',
-                            //       fontWeight: FontWeight.w400,
-                            //       letterSpacing: 0.14,
-                            //     ),
-                            //   ),
-                            // ),
                           ],
                         ),
                       ],
@@ -160,7 +144,8 @@ class _Loginscreen extends State<Loginscreen> {
                           width: 378,
                           child: ButtonThem.buildTextFiled(
                               context, hintText: "Enter Username",
-                              controller: TextEditingController()),
+                              validator: usernameValidator,
+                              controller: controller.username.value),
                         ),
                       ],
                     ),
@@ -198,7 +183,7 @@ class _Loginscreen extends State<Loginscreen> {
                       hintText: 'password '.tr,
                       obscureText: obscure,
                       validator: password1Validator,
-                      controller: TextEditingController(),
+                      controller: controller.password.value,
                       suffixIcon: InkWell(
                         onTap: () {
                           setState(() {
@@ -233,7 +218,7 @@ class _Loginscreen extends State<Loginscreen> {
                     btnRadius: 33,
                     textColor: const Color(0xFF2D2D2D),
                     onPress: () async {
-                      Navigator.pushNamed(context, dashboard);
+                      //Navigator.pushNamed(context, dashboard);
                       if (_formKey.currentState!.validate()) {
                         FocusManager.instance.primaryFocus?.unfocus();
                         //MyDialogs.showProgress();
@@ -243,7 +228,8 @@ class _Loginscreen extends State<Loginscreen> {
                           MyDialogs.error(
                               msg: 'You\'re not connected to a network');
                         } else {
-                          String phone = '';
+                             if(controller.username.value.text == "smartvilla"&&controller.password.value.text=="admin")
+                               Navigator.pushNamed(context, dashboard);
                         }
                       }
                     },
@@ -264,6 +250,14 @@ class _Loginscreen extends State<Loginscreen> {
   String? Function(String?)? password1Validator = (String? value) {
     if (value!.isEmpty) {
       return 'Password cannot be empty';
+    } else {
+      return null;
+    }
+  };
+
+  String? Function(String?)? usernameValidator = (String? value) {
+    if (value!.isEmpty) {
+      return 'Username cannot be empty';
     } else {
       return null;
     }

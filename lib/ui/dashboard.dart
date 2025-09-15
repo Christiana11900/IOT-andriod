@@ -51,7 +51,8 @@ class _DashboardScreen extends State<DashboardScreen> {
                 .dark, // Dark text for status bar
           ),
         ),
-        body: Column(
+        body: SingleChildScrollView(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             //SizedBox(height: 2,),
@@ -136,21 +137,21 @@ class _DashboardScreen extends State<DashboardScreen> {
               child: SfRadialGauge(
                 axes: <RadialAxis>[
                   RadialAxis(minimum: 0,
-                      maximum: 150,
+                      maximum: 130,
                       showLabels: false,
                       showAxisLine: true,
                       ranges: <GaugeRange>[
                         GaugeRange(startValue: 0,
-                          endValue: 75,
-                          color: Colors.orange,
-                          label: 'Poor',),
-                        GaugeRange(startValue: 75,
-                            endValue: 150,
-                            color: Colors.green,
-                            label: 'Good'),
+                          endValue: 40,
+                          color: Colors.green,
+                          label: 'Good',),
+                        GaugeRange(startValue: 40,
+                            endValue: 130,
+                            color: Colors.orange,
+                            label: 'Poor'),
                       ],
                       pointers: <GaugePointer>[
-                        NeedlePointer(value: 60)],
+                        NeedlePointer(value: controller.field3.value)],
                       annotations: <GaugeAnnotation>[
                         GaugeAnnotation(widget: Container(child:
                         Text('Air Quality', style: TextStyle(
@@ -164,6 +165,7 @@ class _DashboardScreen extends State<DashboardScreen> {
             )
           ],
         ),
+      ),
       );
     }
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -27,6 +28,7 @@ class BreathsafeController extends GetxController {
   var pingCount = 0; // Ping counter
   late NotificationUtil notificationUtil;
   BuildContext? context;
+  Timer? timer;
 
   BreathsafeController({required this.context});
 
@@ -56,10 +58,21 @@ class BreathsafeController extends GetxController {
     createBasicNotification(title: 'BreathSafe', content: 'This is for safe breath');
     await feed1();
     await feed2();
+    await feed3();
     await pushNotification();
 
 
     super.onInit();
+  }
+
+  @override
+  void onReady() async {
+    timer = Timer.periodic(const Duration(milliseconds: 2000), ((timer) async{
+      await feed1();
+      await feed2();
+      await feed3();
+    }));
+    super.onReady();
   }
 
   void createBasicNotification({required String title, required String content}) {
@@ -69,7 +82,7 @@ class BreathsafeController extends GetxController {
         channelKey: AppStrings.BASIC_CHANNEL_KEY,
         title: title,
         body: content,
-        bigPicture: 'asset://assets/icons/ic_launcher.png',   //
+        bigPicture: 'asset://assets/icons/breathsafe.png',   //
       );
     }on PlatformException catch(error){
       debugPrint(error.message!.toString());
@@ -124,6 +137,40 @@ class BreathsafeController extends GetxController {
         if(rides['field2'] != null){
           debugPrint(rides['field2']);
           field2.value = double.parse(rides['field2']);
+        }
+        update();
+        notifyChildrens();
+      }
+
+      update();
+      notifyChildrens();
+    } on dio.DioException catch (e) {
+      if (kDebugMode) {
+        print(e);
+        print(e.error);
+      }
+    } finally {}
+  }
+
+  Future<void> feed3() async {
+    debugPrint('From arrived page');
+    try {
+      dio.Response response = await Repository.gas_level();
+      if (kDebugMode) {
+        debugPrint('response');
+        debugPrint(response.data['feeds'].toString());
+
+        //response.data['data']['token']
+      }
+      for (var rides in List.from(response.data['feeds'])) {
+        if(rides['field3'] != null){
+          debugPrint(rides['field3']);
+          field2.value = double.parse(rides['field3']);
+          if( field2.value > 50){
+            createBasicNotification(title: 'BreathSafe', content: 'Unhealthy air');
+          }else{
+
+          }
         }
         update();
         notifyChildrens();

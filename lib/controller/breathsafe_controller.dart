@@ -19,6 +19,8 @@ import '../ui/util/Notification_util.dart';
 import '../ui/util/app_string.dart';
 import '../ui/util/create_uid.dart';
 
+import 'package:fl_chart/fl_chart.dart';
+
 class BreathsafeController extends GetxController {
 
   RxDouble field1 = 0.0.obs;
@@ -29,6 +31,14 @@ class BreathsafeController extends GetxController {
   late NotificationUtil notificationUtil;
   BuildContext? context;
   Timer? timer;
+
+  RxList<FlSpot> tempHistory    = <FlSpot>[].obs;
+  RxList<FlSpot> humHistory     = <FlSpot>[].obs;
+  RxList<FlSpot> gasHistory     = <FlSpot>[].obs;
+  var dataIndex = 0;             // x-axis counter
+
+// Max points to show on graph
+  static const int MAX_POINTS = 20;
 
   BreathsafeController({required this.context});
 
@@ -91,32 +101,31 @@ class BreathsafeController extends GetxController {
 
 
   Future<void> feed1() async {
-    debugPrint('From arrived page');
     try {
       dio.Response response = await Repository.temp();
-      if (kDebugMode) {
-        debugPrint('response');
-        debugPrint(response.data['feeds'].toString());
+      final feeds = List.from(response.data['feeds']);
 
-        //response.data['data']['token']
-      }
-      for (var rides in List.from(response.data['feeds'])) {
-        if(rides['field1'] != null){
-          debugPrint(rides['field1']);
-          field1.value = double.parse(rides['field1']) ;
+      if (feeds.isNotEmpty) {
+        final lastFeed = feeds.last;           // get only last entry
+        if (lastFeed['field1'] != null) {      // only update if not null
+          field1.value = double.parse(lastFeed['field1']);
+         // debugPrint('Temp updated: ${field1.value}');
+          tempHistory.add(FlSpot(dataIndex.toDouble(), field1.value));
+          if (tempHistory.length > MAX_POINTS) tempHistory.removeAt(0);
+          dataIndex++;
+          debugPrint('Temp: ${field1.value} | History: ${tempHistory.length} points');
+        } else {
+          debugPrint('No new temp data, keeping: ${field1.value}');
+          // add to graph history
         }
-        update();
-        notifyChildrens();
       }
 
       update();
       notifyChildrens();
     } on dio.DioException catch (e) {
-      if (kDebugMode) {
-        print(e);
-        print(e.error);
-      }
-    } finally {}
+      debugPrint('feed1 error: $e');
+      // value stays unchanged on error ✅
+    }
   }
 
   void requestPermission() {
@@ -124,66 +133,73 @@ class BreathsafeController extends GetxController {
   }
 
   Future<void> feed2() async {
-    debugPrint('From arrived page');
     try {
       dio.Response response = await Repository.hum();
-      if (kDebugMode) {
-        debugPrint('response');
-        debugPrint(response.data['feeds'].toString());
+      final feeds = List.from(response.data['feeds']);
 
-        //response.data['data']['token']
-      }
-      for (var rides in List.from(response.data['feeds'])) {
-        if(rides['field2'] != null){
-          debugPrint(rides['field2']);
-          field2.value = double.parse(rides['field2']);
+      if (feeds.isNotEmpty) {
+        final lastFeed = feeds.last;
+        if (lastFeed['field2'] != null) {
+          field2.value = double.parse(lastFeed['field2']);
+         // debugPrint('Humidity updated: ${field2.value}');
+          humHistory.add(FlSpot(dataIndex.toDouble(), field2.value));
+          if (humHistory.length > MAX_POINTS) humHistory.removeAt(0);
+          dataIndex++;
+          debugPrint('Temp: ${field2.value} | History: ${humHistory.length} points');
+        } else {
+          debugPrint('No new humidity data, keeping: ${field2.value}');
+          // add to graph history
+          humHistory.add(FlSpot(dataIndex.toDouble(), field2.value));
+          if (humHistory.length > MAX_POINTS) {
+            humHistory.removeAt(0);       // keep rolling window
+          }
+          dataIndex++;
+          debugPrint('Humidity: ${field2.value} | History: ${humHistory.length} points');
         }
-        update();
-        notifyChildrens();
       }
-
       update();
       notifyChildrens();
     } on dio.DioException catch (e) {
-      if (kDebugMode) {
-        print(e);
-        print(e.error);
-      }
-    } finally {}
+      debugPrint('feed2 error: $e');
+    }
   }
 
   Future<void> feed3() async {
-    debugPrint('From arrived page');
     try {
       dio.Response response = await Repository.gas_level();
-      if (kDebugMode) {
-        debugPrint('response');
-        debugPrint(response.data['feeds'].toString());
+      final feeds = List.from(response.data['feeds']);
 
-        //response.data['data']['token']
-      }
-      for (var rides in List.from(response.data['feeds'])) {
-        if(rides['field3'] != null){
-          debugPrint(rides['field3']);
-          field2.value = double.parse(rides['field3']);
-          if( field2.value > 50){
-            createBasicNotification(title: 'BreathSafe', content: 'Unhealthy air');
-          }else{
-
+      if (feeds.isNotEmpty) {
+        final lastFeed = feeds.last;
+        if (lastFeed['field3'] != null) {
+          field3.value = double.parse(lastFeed['field3']);  // ✅ fixed field3
+         // debugPrint('Gas updated: ${field3.value}');
+          gasHistory.add(FlSpot(dataIndex.toDouble(), field3.value));
+          if (gasHistory.length > MAX_POINTS) gasHistory.removeAt(0);
+          dataIndex++;
+          debugPrint('Temp: ${field3.value} | History: ${gasHistory.length} points');
+          if (field3.value > 50) {
+            createBasicNotification(
+              title: 'BreathSafe',
+              content: 'Unhealthy air detected!',
+            );
           }
+        } else {
+          debugPrint('No new gas data, keeping: ${field3.value}');
+          // add to graph history
+          gasHistory.add(FlSpot(dataIndex.toDouble(), field3.value));
+          if (gasHistory.length > MAX_POINTS) {
+            gasHistory.removeAt(0);       // keep rolling window
+          }
+          dataIndex++;
+          debugPrint('Gas: ${field3.value} | History: ${gasHistory.length} points');
         }
-        update();
-        notifyChildrens();
       }
-
       update();
       notifyChildrens();
     } on dio.DioException catch (e) {
-      if (kDebugMode) {
-        print(e);
-        print(e.error);
-      }
-    } finally {}
+      debugPrint('feed3 error: $e');
+    }
   }
 
   Future<void> pushNotification() async {

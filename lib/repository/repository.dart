@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 
 class Repository {
-  static String baseURL = 'https://api.thingspeak.com/channels/3067624/';
+  static String baseURL = 'https://api.thingspeak.com/channels/3310664/';
 
   static Future<Response> temp() {
     var url =

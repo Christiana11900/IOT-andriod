@@ -3,6 +3,7 @@ import 'package:breathcare/ui/util/my_dialog.dart';
 import 'package:breathcare/ui/util/route_constant.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../controller/login_controller.dart';
@@ -207,33 +208,74 @@ class _Loginscreen extends State<Loginscreen> {
                   ),
                 ],
               ),
-              Column(
+              Stack(
                 children: [
                   ButtonThem.buildButton(
                     context,
-                    title: 'Login'.tr,
-                    color: Colors.blueAccent,
+                    title: controller.isLoading.value ? '' : 'Login'.tr,
+                    color: controller.isLoading.value
+                        ? Colors.blueAccent.withOpacity(0.7)
+                        : Colors.blueAccent,
                     select: false,
                     circular: const Color(0xff367367),
                     btnRadius: 33,
                     textColor: const Color(0xFF2D2D2D),
-                    onPress: () async {
-                      //Navigator.pushNamed(context, dashboard);
+                    onPress: controller.isLoading.value
+                        ? () {}                            // disable button while loading
+                        : () async {
                       if (_formKey.currentState!.validate()) {
                         FocusManager.instance.primaryFocus?.unfocus();
-                        //MyDialogs.showProgress();
-                        final connectivityResult =
-                        await Connectivity().checkConnectivity();
-                        if (connectivityResult == ConnectivityResult.none) {
-                          MyDialogs.error(
-                              msg: 'You\'re not connected to a network');
-                        } else {
-                             if(controller.username.value.text == "smartvilla"&&controller.password.value.text=="admin")
-                               Navigator.pushNamed(context, dashboard);
+                        HapticFeedback.lightImpact();  // vibration feedback on tap
+
+                        // show loading
+                        controller.isLoading.value = true;
+
+                        try {
+                          final connectivityResult =
+                          await Connectivity().checkConnectivity();
+
+                          if (connectivityResult == ConnectivityResult.none) {
+                            HapticFeedback.heavyImpact();  // stronger vibrate on error
+                            MyDialogs.error(
+                              msg: 'You\'re not connected to a network',
+                            );
+                          } else {
+                            // small delay so user sees loading spinner
+                            await Future.delayed(const Duration(milliseconds: 800));
+
+                            if (controller.username.value.text == "admin" &&
+                                controller.password.value.text == "admin") {
+                              HapticFeedback.mediumImpact();  // success feedback
+                              Navigator.pushNamed(context, dashboard);
+                            } else {
+                              HapticFeedback.heavyImpact();
+                              MyDialogs.error(
+                                msg: 'Invalid username or password',
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          MyDialogs.error(msg: 'Something went wrong. Try again.');
+                        } finally {
+                          controller.isLoading.value = false;   // always stop loading
                         }
+                      } else {
+                        HapticFeedback.heavyImpact();  // vibrate on form validation fail
                       }
                     },
                   ),
+                  if (controller.isLoading.value)
+                    const Center(
+                      child:  SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      ),
+                    ),
+
                   SizedBox(
                     height: 21,
                   ),
